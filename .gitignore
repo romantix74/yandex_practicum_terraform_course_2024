@@ -1,0 +1,45 @@
+# IDE
+.idea
+.vs
+.vscode
+
+# Local Terraform directories
+**/.terraform/*
+
+# Terrafrom state files
+*.tfstate
+*.tfstate.*
+
+# Terrafrom plan output of commands:
+#   terraform plan -out=terraform.plan
+#   terraform plan -out=tfplan
+terraform.plan
+*tfplan*
+
+# Crash logs
+crash.log
+
+# Terrafrorm generatied variables
+*.tfvars
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Python
+__pycache__
+venv/
+
+# Private data
+keys/
+99-secrets.tf
+
+# Ansible
+*.retry
+
+test_data/
+tmp/
+
+
