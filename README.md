@@ -9,3 +9,9 @@ export YC_FOLDER_ID=$(yc config get folder-id)
 
 terraform plan  
 terraform apply  
+
+
+#### Доп задание по выводу sensitive output
+```
+terraform output yandex_iam_service_account_static_access_key
+```

@@ -27,3 +27,10 @@ output "bucket_name" {
   description = "The name of the Yandex Object Storage bucket."
   value       = yandex_storage_bucket.this.bucket
 }
+
+
+output "yandex_iam_service_account_static_access_key" {
+  description = "The static access key of yandex_iam_service_account."
+  value       = yandex_iam_service_account_static_access_key.this.secret_key
+  sensitive   = true
+}
