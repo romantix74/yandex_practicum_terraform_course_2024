@@ -40,3 +40,7 @@ instance_resources = {
 ```
 terraform output yandex_iam_service_account_static_access_key
 ```
+
+
+#### logs
+yandex_storage_bucket.this: Refreshing state... [id=project-dev-terraform-bucket-ui8mqpc7]

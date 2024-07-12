@@ -39,3 +39,10 @@ output "instance_public_ip_address" {
   description = "The external IP address of the instance."
   value       = yandex_compute_instance.this.network_interface.0.nat_ip_address
 } 
+
+# доп. задание 2 в теме Functions
+# Добавьте ещё одну подсеть с CIDR-блоком в переменную subnets и добавьте локальное значение со списком, 
+# содержащим все CIDR-блоки, с помощью функции flatten. 
+output "all_subnets" {
+  value = flatten(values(var.subnets))
+}
