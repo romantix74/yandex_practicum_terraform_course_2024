@@ -43,4 +43,15 @@ terraform output yandex_iam_service_account_static_access_key
 
 
 #### logs
-yandex_storage_bucket.this: Refreshing state... [id=project-dev-terraform-bucket-ui8mqpc7]
+WAS: 
+"${var.name_prefix}-terraform-bucket-${random_string.bucket_name.result}"  
+  yandex_storage_bucket.this: Refreshing state... [id=project-dev-terraform-bucket-ui8mqpc7]  
+DONE:
+  bucket_name         = "${join("-", [var.name_prefix, "terraform-bucket", random_string.bucket_name.result])}"  
+      yandex_storage_bucket.this: Refreshing state... [id=project-dev-terraform-bucket-ui8mqpc7]  
+
+```
+./terraform console
+> join("-", [var.name_prefix, "terraform-bucket", random_string.bucket_name.result])
+"project-dev-terraform-bucket-ui8mqpc7"
+```

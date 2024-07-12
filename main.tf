@@ -5,7 +5,7 @@ locals {
   vpc_network_name    = "${var.name_prefix}-private"
   ydb_serverless_name = "${var.name_prefix}-ydb-serverless"
   bucket_sa_name      = "${var.name_prefix}-bucket-sa"
-  bucket_name         = "${var.name_prefix}-terraform-bucket-${random_string.bucket_name.result}"
+  bucket_name         = "${join("-", [var.name_prefix, "terraform-bucket", random_string.bucket_name.result])}"  
   all_subnets          = "${flatten(values(var.subnets))}"
 }
 
