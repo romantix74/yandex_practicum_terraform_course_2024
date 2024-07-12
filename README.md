@@ -1,5 +1,17 @@
 
-
+Файл в домшней директории  
+```
+.terraformrc
+provider_installation {
+  network_mirror {
+    url = "https://terraform-mirror.yandexcloud.net/"
+    include = ["registry.terraform.io/*/*"]
+  }
+  direct {
+    exclude = ["registry.terraform.io/*/*"]
+  }
+}
+```
 
 ```
 export YC_TOKEN=$(yc iam create-token)
