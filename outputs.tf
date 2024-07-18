@@ -1,16 +1,27 @@
+# To activate grouping mode, add the symbol ... after the value expression
 output "boot_disk_id" {
   description = "The ID of the boot disk created for the instance."
-  value       = yandex_compute_disk.boot_disk.id
+  # value       = yandex_compute_disk.boot_disk_old.id
+  value = {
+    for disk in yandex_compute_disk.boot_disk :
+    disk.name => disk.id...
+  }
 }
 
-output "instance_id" {
+output "instance_ids" {
   description = "The ID of the Yandex Compute instance."
-  value       = yandex_compute_instance.this.id
+  value = {
+    for instance in yandex_compute_instance.this :
+    instance.name => instance.id...
+  }
 }
 
-output "subnet_id" {
+output "subnet_ids" {
   description = "The ID of the VPC subnet used by the Yandex Compute instance."
-  value       = yandex_vpc_subnet.private.id
+  value = {
+    for subnet in yandex_vpc_subnet.private :
+    subnet.name => subnet.id...
+  }
 }
 
 output "ydb_id" {
@@ -35,7 +46,10 @@ output "yandex_iam_service_account_static_access_key" {
   sensitive   = true
 }
 
-output "instance_public_ip_address" {
-  description = "The external IP address of the instance."
-  value       = yandex_compute_instance.this.network_interface.0.nat_ip_address
-} 
+# output "instance_public_ip_address" {
+#   description = "The external IP address of the instance."
+#   value = {
+#     for address in yandex_vpc_address.this :
+#     address.name => address.external_ipv4_address[0].address...
+#   }
+# } 

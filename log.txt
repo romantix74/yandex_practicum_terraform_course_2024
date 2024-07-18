@@ -1,0 +1,64 @@
+index(tolist(var.zones), "ru-central1-a")
+0
+> index(tolist(var.zones), "ru-central1-d")
+2
+
+WAS
+    resource "yandex_vpc_subnet" "private" {
+    name           = keys(var.subnets)[0]
+    zone           = var.zone
+    v4_cidr_blocks = var.subnets[keys(var.subnets)[0]]
+    network_id     = yandex_vpc_network.this.id
+    }
+
+    resource "yandex_vpc_address" "this" {
+    name = "${local.linux_vm_name}-address"
+    external_ipv4_address {
+        zone_id = var.zone
+    }
+    }
+
+
+-----------------------------
+# без группы
+    boot_disk_id = {
+    "project-dev-boot-disk-a" = "fhm0676fs1tlsdgsfp19"
+    "project-dev-boot-disk-b" = "epdaqplrqcm2f6iameh1"
+    "project-dev-boot-disk-d" = "fv412o20gr9set5ihngv"
+    }
+
+# тут группируем по имени  (получается по зонам, так как имя генерируется на основе имени зоны)
+# disk.name => disk.id...
+    boot_disk_id = {
+    "project-dev-boot-disk-a" = [
+        "fhm0676fs1tlsdgsfp19",
+    ]
+    "project-dev-boot-disk-b" = [
+        "epdaqplrqcm2f6iameh1",
+    ]
+    "project-dev-boot-disk-d" = [
+        "fv412o20gr9set5ihngv",
+    ]
+    }
+
+
+variable "subnets" {
+  description = "(Optional) - A map of subnet names to their CIDR block ranges."
+  type        = map(list(string))
+  default = {
+    "private-subnet" = ["192.168.10.0/24"],
+  }
+} 
+
+
+locals {
+  boot_disk_name      = "${var.name_prefix}-boot-disk"
+  linux_vm_name       = "${var.name_prefix}-linux-vm"
+  vpc_network_name    = "${var.name_prefix}-private"
+  ydb_serverless_name = "${var.name_prefix}-ydb-serverless"
+  bucket_sa_name      = "${var.name_prefix}-bucket-sa"
+  bucket_name         = "${var.name_prefix}-terraform-bucket-${random_string.bucket_name.result}"
+}
+
+
+===2024.07.18===
