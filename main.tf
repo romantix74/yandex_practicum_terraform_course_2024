@@ -8,7 +8,7 @@ locals {
   bucket_name         = var.bucket_name != null ? var.bucket_name : "${var.name_prefix}-terraform-bucket-${random_string.bucket_name.result}"
 }
 
-# Создание дисков и виртуальных машин
+# ---- Создание дисков и виртуальных машин  --------
 resource "yandex_compute_disk" "boot_disk" {
   for_each = var.zones
 
@@ -37,6 +37,13 @@ resource "yandex_compute_instance" "this" {
     disk_id = yandex_compute_disk.boot_disk[each.value].id
   }
 
+  dynamic "secondary_disk" {
+    for_each = each.value == "ru-central1-a" ? yandex_compute_disk.secondary_disk_a : each.value == "ru-central1-b" ? yandex_compute_disk.secondary_disk_b : each.value == "ru-central1-d" ? yandex_compute_disk.secondary_disk_d : []
+    content {
+      disk_id = try(secondary_disk.value.id, null)
+    }
+  }
+
   network_interface {
     subnet_id      = yandex_vpc_subnet.private[each.value].id
     # nat            = true
@@ -51,6 +58,39 @@ resource "yandex_compute_instance" "this" {
     ssh_keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}"
   }
 }
+
+
+resource "yandex_compute_disk" "secondary_disk_a" {
+  count = contains(var.zones, "ru-central1-a") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-a-${count.index}"
+  zone = "ru-central1-a"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
+}
+
+resource "yandex_compute_disk" "secondary_disk_b" {
+  count = contains(var.zones, "ru-central1-b") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-b-${count.index}"
+  zone = "ru-central1-b"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
+}
+
+resource "yandex_compute_disk" "secondary_disk_d" {
+  count = contains(var.zones, "ru-central1-d") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-d-${count.index}"
+  zone = "ru-central1-d"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
+} 
+
+# ------ ETC-------------
 
 # Создание VPC и подсети
 resource "yandex_vpc_network" "this" {
@@ -111,4 +151,20 @@ resource "random_string" "bucket_name" {
   length  = 8
   special = false
   upper   = false
+}
+
+# требуется создать снимок виртуальной машины после её запуска, обновления и настройки
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+
+  depends_on = [yandex_compute_instance.this]
+} 
+
+resource "yandex_compute_snapshot" "initial" {
+  for_each = yandex_compute_disk.boot_disk
+
+  name           = "${each.value.name}-initial"
+  source_disk_id = each.value.id
+
+  depends_on = [time_sleep.wait_120_seconds]
 }

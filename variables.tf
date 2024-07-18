@@ -100,3 +100,20 @@ variable "bucket_name" {
   type        = string
   default     = null
 }
+
+# theme 5 , dop disks
+variable "secondary_disks" {
+  description = "(Optional) - Configuration for secondary disks."
+  type = object({
+    count = number
+    name  = string
+    type  = string
+    size  = number
+  })
+  default = {
+    count = 2
+    name  = "secondary-disk"
+    type  = "network-hdd"
+    size  = 10
+  }
+} 
