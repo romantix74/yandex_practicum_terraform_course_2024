@@ -46,10 +46,10 @@ output "yandex_iam_service_account_static_access_key" {
   sensitive   = true
 }
 
-# output "instance_public_ip_address" {
-#   description = "The external IP address of the instance."
-#   value = {
-#     for address in yandex_vpc_address.this :
-#     address.name => address.external_ipv4_address[0].address...
-#   }
-# } 
+output "instance_public_ip_address" {
+  description = "The external IP address of the instance."
+  value = {
+    for address in yandex_vpc_address.this :
+    address.name => address.external_ipv4_address[0].address...
+  }
+} 

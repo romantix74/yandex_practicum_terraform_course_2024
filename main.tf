@@ -46,8 +46,8 @@ resource "yandex_compute_instance" "this" {
 
   network_interface {
     subnet_id      = yandex_vpc_subnet.private[each.value].id
-    # nat            = true
-    # nat_ip_address = yandex_vpc_address.this[each.value].external_ipv4_address[0].address
+    nat            = true
+    nat_ip_address = yandex_vpc_address.this[each.value].external_ipv4_address[0].address
   }
 
   metadata = {
@@ -106,14 +106,14 @@ resource "yandex_vpc_subnet" "private" {
   network_id     = yandex_vpc_network.this.id
 }
 
-# resource "yandex_vpc_address" "this" {
-#   for_each = var.zones
+resource "yandex_vpc_address" "this" {
+  for_each = var.zones
 
-#   name = length(var.zones) > 1 ? "${local.linux_vm_name}-address-${substr(each.value, -1, 0)}" : "${local.linux_vm_name}-address"
-#   external_ipv4_address {
-#     zone_id = each.value
-#   }
-# }
+  name = length(var.zones) > 1 ? "${local.linux_vm_name}-address-${substr(each.value, -1, 0)}" : "${local.linux_vm_name}-address"
+  external_ipv4_address {
+    zone_id = each.value
+  }
+}
 
 # Создание Yandex Managed Service for YDB
 resource "yandex_ydb_database_serverless" "this" {
