@@ -8,7 +8,7 @@ locals {
   bucket_name         = var.bucket_name != null ? var.bucket_name : "${var.name_prefix}-terraform-bucket-${random_string.bucket_name.result}"
 }
 
-# ---- Создание дисков и виртуальных машин  --------
+# Создание дисков и виртуальных машин
 resource "yandex_compute_disk" "boot_disk" {
   for_each = var.zones
 
@@ -18,6 +18,36 @@ resource "yandex_compute_disk" "boot_disk" {
 
   type = var.instance_resources.disk.disk_type
   size = var.instance_resources.disk.disk_size
+}
+
+resource "yandex_compute_disk" "secondary_disk_a" {
+  count = contains(var.zones, "ru-central1-a") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-a-${count.index}"
+  zone = "ru-central1-a"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
+}
+
+resource "yandex_compute_disk" "secondary_disk_b" {
+  count = contains(var.zones, "ru-central1-b") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-b-${count.index}"
+  zone = "ru-central1-b"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
+}
+
+resource "yandex_compute_disk" "secondary_disk_d" {
+  count = contains(var.zones, "ru-central1-d") ? var.secondary_disks.count : 0
+
+  name = "${var.secondary_disks.name}-d-${count.index}"
+  zone = "ru-central1-d"
+
+  type = var.secondary_disks.type
+  size = var.secondary_disks.size
 }
 
 resource "yandex_compute_instance" "this" {
@@ -53,44 +83,11 @@ resource "yandex_compute_instance" "this" {
   metadata = {
     user-data = templatefile("cloud-init.yaml.tftpl", {
       ydb_connect_string = yandex_ydb_database_serverless.this.ydb_full_endpoint,
-      bucket_domain_name = yandex_storage_bucket.this.bucket_domain_name
+      bucket_domain_name = module.s3.bucket_domain_name #yandex_storage_bucket.this.bucket_domain_name
     })
-    ssh_keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}"
+    ssh_keys = "ubuntu:${file("~/.ssh/id_ed25519.pub")}"
   }
 }
-
-
-resource "yandex_compute_disk" "secondary_disk_a" {
-  count = contains(var.zones, "ru-central1-a") ? var.secondary_disks.count : 0
-
-  name = "${var.secondary_disks.name}-a-${count.index}"
-  zone = "ru-central1-a"
-
-  type = var.secondary_disks.type
-  size = var.secondary_disks.size
-}
-
-resource "yandex_compute_disk" "secondary_disk_b" {
-  count = contains(var.zones, "ru-central1-b") ? var.secondary_disks.count : 0
-
-  name = "${var.secondary_disks.name}-b-${count.index}"
-  zone = "ru-central1-b"
-
-  type = var.secondary_disks.type
-  size = var.secondary_disks.size
-}
-
-resource "yandex_compute_disk" "secondary_disk_d" {
-  count = contains(var.zones, "ru-central1-d") ? var.secondary_disks.count : 0
-
-  name = "${var.secondary_disks.name}-d-${count.index}"
-  zone = "ru-central1-d"
-
-  type = var.secondary_disks.type
-  size = var.secondary_disks.size
-} 
-
-# ------ ETC-------------
 
 # Создание VPC и подсети
 resource "yandex_vpc_network" "this" {
@@ -121,31 +118,31 @@ resource "yandex_ydb_database_serverless" "this" {
 }
 
 # Создание сервисного аккаунта 
-resource "yandex_iam_service_account" "bucket" {
-  name = local.bucket_sa_name
-}
+# resource "yandex_iam_service_account" "bucket" {
+#   name = local.bucket_sa_name
+# }
 
 # Назначение роли сервисному аккаунту
-resource "yandex_resourcemanager_folder_iam_member" "storage_editor" {
-  folder_id = var.folder_id
-  role      = "storage.editor"
-  member    = "serviceAccount:${yandex_iam_service_account.bucket.id}"
-}
+# resource "yandex_resourcemanager_folder_iam_member" "storage_editor" {
+#   folder_id = var.folder_id
+#   role      = "storage.editor"
+#   member    = "serviceAccount:${yandex_iam_service_account.bucket.id}"
+# }
 
 # Создание статического ключа доступа
-resource "yandex_iam_service_account_static_access_key" "this" {
-  service_account_id = yandex_iam_service_account.bucket.id
-  description        = "static access key for object storage"
-}
+# resource "yandex_iam_service_account_static_access_key" "this" {
+#   service_account_id = yandex_iam_service_account.bucket.id
+#   description        = "static access key for object storage"
+# }
 
-# Создание бакета 
-resource "yandex_storage_bucket" "this" {
-  bucket     = local.bucket_name
-  access_key = yandex_iam_service_account_static_access_key.this.access_key
-  secret_key = yandex_iam_service_account_static_access_key.this.secret_key
+# # Создание бакета 
+# resource "yandex_storage_bucket" "this" {
+#   bucket     = local.bucket_name
+#   access_key = yandex_iam_service_account_static_access_key.this.access_key
+#   secret_key = yandex_iam_service_account_static_access_key.this.secret_key
   
-  depends_on = [ yandex_resourcemanager_folder_iam_member.storage_editor ]
-}
+#   depends_on = [ yandex_resourcemanager_folder_iam_member.storage_editor ]
+# }
 
 resource "random_string" "bucket_name" {
   length  = 8
@@ -153,18 +150,8 @@ resource "random_string" "bucket_name" {
   upper   = false
 }
 
-# требуется создать снимок виртуальной машины после её запуска, обновления и настройки
-resource "time_sleep" "wait_120_seconds" {
-  create_duration = "120s"
+module "s3" {
+  source = "github.com/terraform-yc-modules/terraform-yc-s3.git?ref=9fc2f832875aefb6051a2aa47b5ecc9a7ea8fde5" # Commit hash for 1.0.2
 
-  depends_on = [yandex_compute_instance.this]
+  bucket_name = local.bucket_name
 } 
-
-resource "yandex_compute_snapshot" "initial" {
-  for_each = yandex_compute_disk.boot_disk
-
-  name           = "${each.value.name}-initial"
-  source_disk_id = each.value.id
-
-  depends_on = [time_sleep.wait_120_seconds]
-}
